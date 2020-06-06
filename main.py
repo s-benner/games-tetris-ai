@@ -52,48 +52,64 @@ class GeneralCanvas(tk.Canvas):
         super().__init__(width=APPL_SIZE_X, height=APPL_SIZE_Y, background="black", highlightthickness=0)
         self.appl = application
 
-# class for the menu, extending the general canvas class
-# ------------------------------------------------------
+"""class for the menu, extending the general canvas class"""
+"""------------------------------------------------------"""
 class Menu(GeneralCanvas):
 
     def __init__(self, application):
         super().__init__(application)
 
-# class for the actual game, extending the general canvas class
-# -------------------------------------------------------------
+"""class for the actual game, extending the general canvas class"""
+"""-------------------------------------------------------------"""
 class Tetris(GeneralCanvas):
     # attributes
-    gameover = False
-    score = 0
-    squares = [[0 for i in range(GRID_SIZE_X)] for j in range(GRID_SIZE_Y)]
-    squareobjects = []
-    boardobjects = []
-    thispiece = []
-    nextpiece = random.randrange(1,8)
+    gameover = False #game status tracker
+    score = 0 #score variable
+    squares = [[0 for i in range(GRID_SIZE_X)] for j in range(GRID_SIZE_Y)] #container for all squares of the playing field
+    squareobjects = [] #srotes all canvas elements that make up the playing pieces
+    boardobjects = [] #stores all canvas elements that make up the playing board
+    thispiece = [] #stores where the current moving piece is located
+    nextpiece = random.randrange(1,8) #id od the next piece to be spawned
 
+    """constructor method"""
+    """------------------"""
     def __init__(self, application):
         super().__init__(application)
 
-    # method that specifies the game routine
+    """method that runs the game"""
+    """-------------------------"""
     def run_game(self):
         # show the board
         self.show_board()
         # run the actual game loop
         self.game_loop()
 
+    """class for the actual game loop"""
+    """------------------------------"""
     def game_loop(self):
-        # check if a new piece needs to be generated
+        # check if the game is over
+
+        # check if a new piece needs to be generated, if not, the called function will do nothing
         self.nextpiece = self.new_piece(self.thispiece, self.nextpiece)
 
         # display all pieces on the board
         self.show_squares()
 
+        #loop tail call
+        self.after(75,self.game_loop)
+
+    """class that checks if a new piece needs to be spawned and if so executes the spawn"""
+    """---------------------------------------------------------------------------------"""
     def new_piece(self, this, next):
         if not this:
-            self.squares[ROOT[1]][ROOT[0]] = next
-            self.squares[ROOT[1]+SPAWNOFFSETS[next-1][0]][ROOT[0]+SPAWNOFFSETS[next-1][1]],self.squares[ROOT[1]+SPAWNOFFSETS[next-1][2]][ROOT[0]++SPAWNOFFSETS[next-1][3]],self.squares[ROOT[1]+SPAWNOFFSETS[next-1][4]][ROOT[0]+SPAWNOFFSETS[next-1][5]] = next, next, next
+            #generate thispiece varibale, storing the locations of the current moving piece
+            self.thispiece = [[ROOT[1],ROOT[0]], [ROOT[1]+SPAWNOFFSETS[next-1][0],ROOT[0]+SPAWNOFFSETS[next-1][1]], [ROOT[1]+SPAWNOFFSETS[next-1][2],ROOT[0]+SPAWNOFFSETS[next-1][3]], [ROOT[1]+SPAWNOFFSETS[next-1][4],ROOT[0]+SPAWNOFFSETS[next-1][5]]]
+            #set the squares variables, where the current moving piece is located
+            for i in range(4): self.squares[self.thispiece[i][0]][self.thispiece[i][1]] = next
+            #generate the if of the next new piece to be spawned and return it
             return random.randrange(8)
         else:
+            #if no new piece is spawned, just return the current value for nextpiece
             return next
 
     def show_board(self):
