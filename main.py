@@ -12,8 +12,13 @@ BASE_X = 100 #beginning of actual game board in x direction
 BASE_Y = 120 #beginning of actual game board in y direction
 ROOT = [int(GRID_SIZE_X//2), GRID_SIZE_Y-1] #indices of the root cell where new pieces spawn
 SPAWNOFFSETS=[[0,-1,-1,0,-1,-1],[0,-1,0,1,-1,-1],[0,-1,0,1,-1,1],[0,-1,0,-2,0,1],[0,-1,0,1,-1,0],[0,-1,-1,-1,-1,-2],[0,1,-1,1,-1,2]] #offsets from the root cell of a piece for the other squares
+ROOTOFFSETS = [] #used to determine the squares of a piece relative to the root square
+ROOTOFFSETS.append([[0,-1,-1,0,-1,-1],[0,-1,0,1,-1,-1],[0,-1,0,1,-1,1],[0,-1,0,-2,0,1],[0,-1,0,1,-1,0],[0,-1,-1,-1,-1,-2],[0,1,-1,1,-1,2]])
+ROOTOFFSETS.append([[0,-1,-1,0,-1,-1],[0,-1,0,1,-1,-1],[0,-1,0,1,-1,1],[0,-1,0,-2,0,1],[0,-1,0,1,-1,0],[0,-1,-1,-1,-1,-2],[0,1,-1,1,-1,2]])
+ROOTOFFSETS.append([[0,-1,-1,0,-1,-1],[0,-1,0,1,-1,-1],[0,-1,0,1,-1,1],[0,-1,0,-2,0,1],[0,-1,0,1,-1,0],[0,-1,-1,-1,-1,-2],[0,1,-1,1,-1,2]])
+ROOTOFFSETS.append([[0,-1,-1,0,-1,-1],[0,-1,0,1,-1,-1],[0,-1,0,1,-1,1],[0,-1,0,-2,0,1],[0,-1,0,1,-1,0],[0,-1,-1,-1,-1,-2],[0,1,-1,1,-1,2]])
 COLORS = ["black", "red", "green", "yellow", "orange", "blue", "pink", "gray", "white"] #list of colors the game uses
-FRAMERATE = 40 #intended frames per second
+FRAMERATE = 60 #intended frames per second
 HOLD = 1000//FRAMERATE #holdtime for the intended framerate in milliseconds
 SPEEDFACTOR = 3 #is multiplied with the current gamespeed to determine the number of frames between drops
 ROWCOMPLETESCORES = [0,10,50,250,1000] #scores for completed rows
@@ -71,10 +76,11 @@ class Tetris(GeneralCanvas):
     boardobjects = [] #stores all canvas elements that make up the playing board
     thispiece = [] #stores where the current moving piece is located
     thispieceid = 0 #stores the type of the current moving piece
+    thispiecerotation = 0 #stores the rotation of the current moving piece
     nextpiece = random.randrange(1,8) #id od the next piece to be spawned
     speed = 10 #speed of the game in 'drop every speed*SPEEDFACTOR frames', therefore 10 is slowest and 1 is fastest
     framecounter = 1 #used to count the frames until the next drop
-    legalinputs = ["Left","Right","Down"] #input for event handling
+    legalinputs = ["Left","Right","Down","Up"] #input for event handling
     rowscleared = 0 #keeps track of the number of rows cleared
 
     """constructor method"""
@@ -85,15 +91,13 @@ class Tetris(GeneralCanvas):
     """method that runs the game"""
     """-------------------------"""
     def run_game(self):
+        self.nextpiece = self.new_piece(self.thispiece, self.nextpiece)
         self.game_loop()
         #after game_loop is completed, call the game over screen
 
     """method for the actual game loop"""
     """------------------------------"""
     def game_loop(self):
-        # check if a new piece needs to be generated, if not, the called function will do nothing
-        self.nextpiece = self.new_piece(self.thispiece, self.nextpiece)
-
         #check if the game is over, if so, return out of the game_loop
         if self.gameover: return
         #check if a drop needs to be executed, if so, call the function
@@ -116,6 +120,9 @@ class Tetris(GeneralCanvas):
         if e.keysym == "Right": newposition = [[self.thispiece[i][0], self.thispiece[i][1] - 1] for i in range(4)]
         #if the left key has been pressed, the piece is supposed to move in positive x direction
         if e.keysym == "Left": newposition = [[self.thispiece[i][0], self.thispiece[i][1] + 1] for i in range(4)]
+        #if the up key has been pressed, the piece is supposed to rotate by 90 degrees
+        if e.keysym == "Up":
+            self.thispiecerotation = (self.thispiecerotation + 1) % 4
         #if the down key has been pressed, the piece is supposed to move down
         if e.keysym == "Down":
             self.drop()
@@ -136,8 +143,8 @@ class Tetris(GeneralCanvas):
     """method that checks for collision with a newposition provided"""
     """------------------------------------------------------------"""
     def check_collision(self,newposition):
-        #check if the bottom is reached
-        if min(newposition[i][0] for i in range(4)) == -1: return True
+        #check if the bottom or top is reached
+        if min(newposition[i][0] for i in range(4)) == -1 or max(newposition[i][0] for i in range(4)) == GRID_SIZE_Y: return True
         #check for collision with left or right wall
         if min(newposition[i][1] for i in range(4)) == -1 or max(newposition[i][1] for i in range(4)) == GRID_SIZE_X: return True
         #check for collisions with existing pieces
@@ -159,6 +166,7 @@ class Tetris(GeneralCanvas):
         #increase the score
         self.score += (11-self.speed)
         self.check_and_remove_complete_rows()
+        self.nextpiece = self.new_piece(self.thispiece, self.nextpiece)
 
     """method that checks if rows are completed and removes them if so"""
     """---------------------------------------------------------------"""
@@ -179,6 +187,7 @@ class Tetris(GeneralCanvas):
         filler = [0 for i in range(GRID_SIZE_X)]
         for j in range(leng): squares_new.append(filler)
         self.squares = squares_new
+        if self.rowscleared > (11 - self.speed) * 10: self.speed = max(self.speed - 1,1)
 
     """method that updates the position of the moving piece (used for drop and rotate)"""
     """-------------------------------------------------------------------------------"""
@@ -192,6 +201,7 @@ class Tetris(GeneralCanvas):
             #generate thispiece varibale, storing the locations of the current moving piece
             self.thispiece = [[ROOT[1],ROOT[0]], [ROOT[1]+SPAWNOFFSETS[next-1][0],ROOT[0]+SPAWNOFFSETS[next-1][1]], [ROOT[1]+SPAWNOFFSETS[next-1][2],ROOT[0]+SPAWNOFFSETS[next-1][3]], [ROOT[1]+SPAWNOFFSETS[next-1][4],ROOT[0]+SPAWNOFFSETS[next-1][5]]]
             self.thispieceid = next
+            self.thispiecerotation = 0
             #check for collisions
             collision = self.check_collision(self.thispiece)
             if collision: self.gameover = True
