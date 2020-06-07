@@ -11,12 +11,11 @@ GRID_SIZE_Y = 20 #numbe of board grid units in y direction
 BASE_X = 100 #beginning of actual game board in x direction
 BASE_Y = 120 #beginning of actual game board in y direction
 ROOT = [int(GRID_SIZE_X//2), GRID_SIZE_Y-1] #indices of the root cell where new pieces spawn
-SPAWNOFFSETS=[[0,-1,-1,0,-1,-1],[0,-1,0,1,-1,-1],[0,-1,0,1,-1,1],[0,-1,0,-2,0,1],[0,-1,0,1,-1,0],[0,-1,-1,-1,-1,-2],[0,1,-1,1,-1,2]] #offsets from the root cell of a piece for the other squares
 ROOTOFFSETS = [] #used to determine the squares of a piece relative to the root square
-ROOTOFFSETS.append([[0,-1,-1,0,-1,-1],[0,-1,0,1,-1,-1],[0,-1,0,1,-1,1],[0,-1,0,-2,0,1],[0,-1,0,1,-1,0],[0,-1,-1,-1,-1,-2],[0,1,-1,1,-1,2]])
-ROOTOFFSETS.append([[0,-1,-1,0,-1,-1],[0,-1,0,1,-1,-1],[0,-1,0,1,-1,1],[0,-1,0,-2,0,1],[0,-1,0,1,-1,0],[0,-1,-1,-1,-1,-2],[0,1,-1,1,-1,2]])
-ROOTOFFSETS.append([[0,-1,-1,0,-1,-1],[0,-1,0,1,-1,-1],[0,-1,0,1,-1,1],[0,-1,0,-2,0,1],[0,-1,0,1,-1,0],[0,-1,-1,-1,-1,-2],[0,1,-1,1,-1,2]])
-ROOTOFFSETS.append([[0,-1,-1,0,-1,-1],[0,-1,0,1,-1,-1],[0,-1,0,1,-1,1],[0,-1,0,-2,0,1],[0,-1,0,1,-1,0],[0,-1,-1,-1,-1,-2],[0,1,-1,1,-1,2]])
+ROOTOFFSETS.append([[0,0,0,0,0,0],[0,2,0,1,0,-1],[0,1,0,-1,-1,0],[0,1,0,-1,-1,1],[0,1,0,-1,-1,-1],[0,1,-1,0,-1,-1],[0,-1,-1,0,-1,1],[0,-1,-1,0,-1,-1]])
+ROOTOFFSETS.append([[0,0,0,0,0,0],[1,0,-1,0,-2,0],[0,-1,1,0,-1,0],[1,0,-1,0,-1,-1],[1,0,-1,0,1,-1],[0,-1,1,-1,-1,0],[1,0,0,-1,-1,-1],[0,-1,-1,0,-1,-1]])
+ROOTOFFSETS.append([[0,0,0,0,0,0],[0,1,0,-1,0,-2],[0,1,0,-1,1,0],[0,1,0,-1,1,-1],[0,1,0,-1,1,1],[0,-1,1,0,1,1],[0,1,1,0,1,-1],[0,-1,-1,0,-1,-1]])
+ROOTOFFSETS.append([[0,0,0,0,0,0],[1,0,2,0,-1,0],[1,0,-1,0,0,1],[1,0,-1,0,1,1],[1,0,-1,0,-1,1],[1,0,0,1,-1,1],[0,1,1,1,-1,0],[0,-1,-1,0,-1,-1]])
 COLORS = ["black", "red", "green", "yellow", "orange", "blue", "pink", "gray", "white"] #list of colors the game uses
 FRAMERATE = 60 #intended frames per second
 HOLD = 1000//FRAMERATE #holdtime for the intended framerate in milliseconds
@@ -93,13 +92,19 @@ class Tetris(GeneralCanvas):
     def run_game(self):
         self.nextpiece = self.new_piece(self.thispiece, self.nextpiece)
         self.game_loop()
-        #after game_loop is completed, call the game over screen
+
+    """game over method"""
+    """----------------"""
+    def game_over(self):
+        self.boardobjects.append(self.create_text(250, 300, text="GAME OVER!", fill="white", font=("TkDefaultFont", 30)))
 
     """method for the actual game loop"""
     """------------------------------"""
     def game_loop(self):
         #check if the game is over, if so, return out of the game_loop
-        if self.gameover: return
+        if self.gameover:
+            self.game_over()
+            return
         #check if a drop needs to be executed, if so, call the function
         if self.framecounter % (SPEEDFACTOR*self.speed) == 0:
             self.framecounter = 0
@@ -123,6 +128,12 @@ class Tetris(GeneralCanvas):
         #if the up key has been pressed, the piece is supposed to rotate by 90 degrees
         if e.keysym == "Up":
             self.thispiecerotation = (self.thispiecerotation + 1) % 4
+            newposition = [
+                [self.thispiece[0][0],self.thispiece[0][1]],
+                [self.thispiece[0][0]+ROOTOFFSETS[self.thispiecerotation][self.thispieceid][0],self.thispiece[0][1]+ROOTOFFSETS[self.thispiecerotation][self.thispieceid][1]],
+                [self.thispiece[0][0]+ROOTOFFSETS[self.thispiecerotation][self.thispieceid][2],self.thispiece[0][1]+ROOTOFFSETS[self.thispiecerotation][self.thispieceid][3]],
+                [self.thispiece[0][0]+ROOTOFFSETS[self.thispiecerotation][self.thispieceid][4],self.thispiece[0][1]+ROOTOFFSETS[self.thispiecerotation][self.thispieceid][5]]
+                ]
         #if the down key has been pressed, the piece is supposed to move down
         if e.keysym == "Down":
             self.drop()
@@ -199,7 +210,7 @@ class Tetris(GeneralCanvas):
     def new_piece(self, this, next):
         if not this:
             #generate thispiece varibale, storing the locations of the current moving piece
-            self.thispiece = [[ROOT[1],ROOT[0]], [ROOT[1]+SPAWNOFFSETS[next-1][0],ROOT[0]+SPAWNOFFSETS[next-1][1]], [ROOT[1]+SPAWNOFFSETS[next-1][2],ROOT[0]+SPAWNOFFSETS[next-1][3]], [ROOT[1]+SPAWNOFFSETS[next-1][4],ROOT[0]+SPAWNOFFSETS[next-1][5]]]
+            self.thispiece = [[ROOT[1],ROOT[0]], [ROOT[1]+ROOTOFFSETS[0][next][0],ROOT[0]+ROOTOFFSETS[0][next][1]], [ROOT[1]+ROOTOFFSETS[0][next][2],ROOT[0]+ROOTOFFSETS[0][next][3]], [ROOT[1]+ROOTOFFSETS[0][next][4],ROOT[0]+ROOTOFFSETS[0][next][5]]]
             self.thispieceid = next
             self.thispiecerotation = 0
             #check for collisions
@@ -218,8 +229,8 @@ class Tetris(GeneralCanvas):
         for i in range(1,GRID_SIZE_X):
             for j in range(1,GRID_SIZE_Y):
                 self.boardobjects.append(self.create_rectangle(BASE_X+GRID_UNIT*i-1, BASE_Y+GRID_UNIT*j-1,BASE_X+GRID_UNIT*i+1, BASE_Y+GRID_UNIT*j+1,fill=COLORS[8]))
-        self.boardobjects.append(self.create_text(20,20, text=f"Score: {self.score}", fill="white", font="TkDefaultFont"))
-        self.boardobjects.append(self.create_text(200,20, text=f"Level: {11-self.speed}", fill="white", font="TkDefaultFont"))
+        self.boardobjects.append(self.create_text(100,20, text=f"Score: {self.score}", fill="white", font="TkDefaultFont"))
+        self.boardobjects.append(self.create_text(250,20, text=f"Level: {11-self.speed}", fill="white", font="TkDefaultFont"))
         self.boardobjects.append(self.create_text(400, 20, text=f"Rows Cleared: {self.rowscleared}", fill="white", font="TkDefaultFont"))
 
     """method that display all the squares making up the pieces and also other dynamic content like the score and the next piece"""
