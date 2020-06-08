@@ -82,7 +82,7 @@ class Tetris(GeneralCanvas):
     framecounter = 1 #used to count the frames until the next drop
     legalinputs = LEGALKEYS #input for event handling
     rowscleared = 0 #keeps track of the number of rows cleared
-    piececounter = 0
+    intendedrotation = -1 #needed for the rotationcheck
 
     """constructor method"""
     """------------------"""
@@ -130,12 +130,12 @@ class Tetris(GeneralCanvas):
         if e.keysym == "Left": newposition = [[self.thispiece[i][0], self.thispiece[i][1] + 1] for i in range(4)]
         #if the up key has been pressed, the piece is supposed to rotate by 90 degrees
         if e.keysym == "Up":
-            self.thispiecerotation = (self.thispiecerotation + 1) % 4
+            self.intendedrotation = (self.thispiecerotation + 1) % 4
             newposition = [
                 [self.thispiece[0][0],self.thispiece[0][1]],
-                [self.thispiece[0][0]+ROOTOFFSETS[self.thispiecerotation][self.thispieceid][0],self.thispiece[0][1]+ROOTOFFSETS[self.thispiecerotation][self.thispieceid][1]],
-                [self.thispiece[0][0]+ROOTOFFSETS[self.thispiecerotation][self.thispieceid][2],self.thispiece[0][1]+ROOTOFFSETS[self.thispiecerotation][self.thispieceid][3]],
-                [self.thispiece[0][0]+ROOTOFFSETS[self.thispiecerotation][self.thispieceid][4],self.thispiece[0][1]+ROOTOFFSETS[self.thispiecerotation][self.thispieceid][5]]
+                [self.thispiece[0][0]+ROOTOFFSETS[self.intendedrotation][self.thispieceid][0],self.thispiece[0][1]+ROOTOFFSETS[self.intendedrotation][self.thispieceid][1]],
+                [self.thispiece[0][0]+ROOTOFFSETS[self.intendedrotation][self.thispieceid][2],self.thispiece[0][1]+ROOTOFFSETS[self.intendedrotation][self.thispieceid][3]],
+                [self.thispiece[0][0]+ROOTOFFSETS[self.intendedrotation][self.thispieceid][4],self.thispiece[0][1]+ROOTOFFSETS[self.intendedrotation][self.thispieceid][5]]
                 ]
         #if the down key has been pressed, the piece is supposed to move down
         if e.keysym == "Down":
@@ -144,6 +144,7 @@ class Tetris(GeneralCanvas):
             return
         collision = self.check_collision(newposition)
         if not collision: self.update_position(newposition)
+        if not self.intendedrotation == -1 and not collision: self.thispiecerotation = self.intendedrotation
 
     """method that executes a drop of 1 unit down"""
     """------------------------------------------"""
@@ -201,7 +202,7 @@ class Tetris(GeneralCanvas):
         for i in range(GRID_SIZE_Y):
             if not i in rows_complete: squares_new.append(self.squares[i].copy())
         filler = [0 for i in range(GRID_SIZE_X)]
-        for j in range(leng): squares_new.append(filler)
+        for j in range(leng): squares_new.append(filler.copy())
         self.squares = squares_new.copy()
         if self.rowscleared > (11 - self.speed) * 10: self.speed = max(self.speed - 1,1)
 
@@ -214,7 +215,6 @@ class Tetris(GeneralCanvas):
     """---------------------------------------------------------------------------------"""
     def new_piece(self, this, next):
         if not this:
-            self.piececounter += 1
             #generate thispiece varibale, storing the locations of the current moving piece
             self.thispiece = [[ROOT[1],ROOT[0]], [ROOT[1]+ROOTOFFSETS[0][next][0],ROOT[0]+ROOTOFFSETS[0][next][1]], [ROOT[1]+ROOTOFFSETS[0][next][2],ROOT[0]+ROOTOFFSETS[0][next][3]], [ROOT[1]+ROOTOFFSETS[0][next][4],ROOT[0]+ROOTOFFSETS[0][next][5]]]
             self.thispieceid = next
