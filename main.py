@@ -21,6 +21,7 @@ FRAMERATE = 60 #intended frames per second
 HOLD = 1000//FRAMERATE #holdtime for the intended framerate in milliseconds
 SPEEDFACTOR = 3 #is multiplied with the current gamespeed to determine the number of frames between drops
 ROWCOMPLETESCORES = [0,10,50,250,1000] #scores for completed rows
+LEGALKEYS = ["Left","Right","Down","Up"] #needed for the event handling
 
 """main application class"""
 """----------------------"""
@@ -79,8 +80,9 @@ class Tetris(GeneralCanvas):
     nextpiece = random.randrange(1,8) #id od the next piece to be spawned
     speed = 10 #speed of the game in 'drop every speed*SPEEDFACTOR frames', therefore 10 is slowest and 1 is fastest
     framecounter = 1 #used to count the frames until the next drop
-    legalinputs = ["Left","Right","Down","Up"] #input for event handling
+    legalinputs = LEGALKEYS #input for event handling
     rowscleared = 0 #keeps track of the number of rows cleared
+    piececounter = 0
 
     """constructor method"""
     """------------------"""
@@ -108,6 +110,7 @@ class Tetris(GeneralCanvas):
         #check if a drop needs to be executed, if so, call the function
         if self.framecounter % (SPEEDFACTOR*self.speed) == 0:
             self.framecounter = 0
+            #print("drop called from game loop")
             self.drop()
         #display all pieces on the board
         self.show_squares()
@@ -136,6 +139,7 @@ class Tetris(GeneralCanvas):
                 ]
         #if the down key has been pressed, the piece is supposed to move down
         if e.keysym == "Down":
+            #print("Drop called from event!")
             self.drop()
             return
         collision = self.check_collision(newposition)
@@ -144,12 +148,14 @@ class Tetris(GeneralCanvas):
     """method that executes a drop of 1 unit down"""
     """------------------------------------------"""
     def drop(self):
+        self.legalinputs = []
         #calculate the new position
         newposition = [ [self.thispiece[i][0]-1,self.thispiece[i][1]] for i in range(4) ]
         #check for collision, if so, then do not drop, but rather convert the moving peace to static. if there is not collision then update position
         collision = self.check_collision(newposition)
         if collision: self.make_piece_static()
         else: self.update_position(newposition)
+        self.legalinputs = LEGALKEYS
 
     """method that checks for collision with a newposition provided"""
     """------------------------------------------------------------"""
@@ -171,7 +177,6 @@ class Tetris(GeneralCanvas):
         #add thispiece data to squares
         for i in range(4):
             self.squares[self.thispiece[i][0]][self.thispiece[i][1]] = self.thispieceid
-        #remove this piece data, such that a new piece will be spawned
         self.thispiece = []
         self.thispieceid = 0
         #increase the score
@@ -194,10 +199,10 @@ class Tetris(GeneralCanvas):
         #remove the cleared rows
         squares_new = []
         for i in range(GRID_SIZE_Y):
-            if not i in rows_complete: squares_new.append(self.squares[i])
+            if not i in rows_complete: squares_new.append(self.squares[i].copy())
         filler = [0 for i in range(GRID_SIZE_X)]
         for j in range(leng): squares_new.append(filler)
-        self.squares = squares_new
+        self.squares = squares_new.copy()
         if self.rowscleared > (11 - self.speed) * 10: self.speed = max(self.speed - 1,1)
 
     """method that updates the position of the moving piece (used for drop and rotate)"""
@@ -209,6 +214,7 @@ class Tetris(GeneralCanvas):
     """---------------------------------------------------------------------------------"""
     def new_piece(self, this, next):
         if not this:
+            self.piececounter += 1
             #generate thispiece varibale, storing the locations of the current moving piece
             self.thispiece = [[ROOT[1],ROOT[0]], [ROOT[1]+ROOTOFFSETS[0][next][0],ROOT[0]+ROOTOFFSETS[0][next][1]], [ROOT[1]+ROOTOFFSETS[0][next][2],ROOT[0]+ROOTOFFSETS[0][next][3]], [ROOT[1]+ROOTOFFSETS[0][next][4],ROOT[0]+ROOTOFFSETS[0][next][5]]]
             self.thispieceid = next
