@@ -205,7 +205,7 @@ class Tetris(GeneralCanvas):
         filler = [0 for i in range(GRID_SIZE_X)]
         for j in range(leng): squares_new.append(filler.copy())
         self.squares = squares_new.copy()
-        if self.rowscleared > (11 - self.speed) * 10: self.speed = max(self.speed - 1,1)
+        if self.rowscleared >= (11 - (self.speed -1)) * 10: self.speed = max(self.speed - 1,1)
 
     """method that updates the position of the moving piece (used for drop and rotate)"""
     """-------------------------------------------------------------------------------"""
