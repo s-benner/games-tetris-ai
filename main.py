@@ -20,7 +20,7 @@ COLORS = ["black", "red", "green", "yellow", "orange", "blue", "pink", "gray", "
 FRAMERATE = 60 #intended frames per second
 HOLD = 1000//FRAMERATE #holdtime for the intended framerate in milliseconds
 SPEEDFACTOR = 3 #is multiplied with the current gamespeed to determine the number of frames between drops
-ROWCOMPLETESCORES = [0,10,50,250,1000] #scores for completed rows
+ROWCOMPLETESCORES = [0,5,25,100,250] #scores for completed rows
 LEGALKEYS = ["Left","Right","Down","Up"] #needed for the event handling
 
 """main application class"""
@@ -83,6 +83,7 @@ class Tetris(GeneralCanvas):
     legalinputs = LEGALKEYS #input for event handling
     rowscleared = 0 #keeps track of the number of rows cleared
     intendedrotation = -1 #needed for the rotationcheck
+    dropbonus = 1 #when you actively drop a piece your score is raised
 
     """constructor method"""
     """------------------"""
@@ -110,7 +111,6 @@ class Tetris(GeneralCanvas):
         #check if a drop needs to be executed, if so, call the function
         if self.framecounter % (SPEEDFACTOR*self.speed) == 0:
             self.framecounter = 0
-            #print("drop called from game loop")
             self.drop()
         #display all pieces on the board
         self.show_squares()
@@ -139,7 +139,7 @@ class Tetris(GeneralCanvas):
                 ]
         #if the down key has been pressed, the piece is supposed to move down
         if e.keysym == "Down":
-            #print("Drop called from event!")
+            self.dropbonus = 2
             self.drop()
             return
         collision = self.check_collision(newposition)
@@ -181,7 +181,8 @@ class Tetris(GeneralCanvas):
         self.thispiece = []
         self.thispieceid = 0
         #increase the score
-        self.score += (11-self.speed)
+        self.score += (11-self.speed)*self.dropbonus
+        self.dropbonus = 1
         self.check_and_remove_complete_rows()
         self.nextpiece = self.new_piece(self.thispiece, self.nextpiece)
 
@@ -195,7 +196,7 @@ class Tetris(GeneralCanvas):
         if not rows_complete: return
         leng = len(rows_complete)
         #add score for complete rows and increase rows complete counter
-        self.score += ROWCOMPLETESCORES[leng]
+        self.score += ROWCOMPLETESCORES[leng] * (11 - self.speed)
         self.rowscleared += leng
         #remove the cleared rows
         squares_new = []
